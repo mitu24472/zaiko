@@ -151,15 +151,27 @@ http://localhost:3000 でアクセス可能
 
 ### Renderへのデプロイ
 1. GitHub リポジトリを Render に接続
-2. 環境変数を設定
-3. Node.js バージョン: 18.17.0 (`.nvmrc`で指定)
-4. ビルドコマンド: `npm ci && npm run build`
-5. 開始コマンド: `npm run start`
+2. **環境変数を設定**：
+   ```
+   NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key
+   NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+   NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
+   NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
+   NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+   NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
+   PORT=10000
+   ```
+3. **ビルド設定**：
+   - Node.js バージョン: 18.17.0 (`.nvmrc`で指定)
+   - ビルドコマンド: `npm ci && npm run build`
+   - 開始コマンド: `npm run start`
 
 ### デプロイ時の注意事項
 - Node.js 18.17.0を使用
 - Next.js 13.5.6は安定版でデプロイエラーを回避
 - `moduleResolution: "node"`でTypeScriptエラーを解決
+- App Router対応でミドルウェアとエラーハンドリングを実装
+- 環境変数`PORT`の設定が必要（通常は10000）
 
 ## セキュリティ
 

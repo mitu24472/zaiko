@@ -2,8 +2,31 @@
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
-  experimental: {
-    // Next.js 12用の設定
+  trailingSlash: false,
+  async rewrites() {
+    return [
+      {
+        source: '/',
+        destination: '/'
+      }
+    ];
+  },
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          {
+            key: 'X-Frame-Options',
+            value: 'DENY'
+          },
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff'
+          }
+        ]
+      }
+    ];
   }
 }
 
