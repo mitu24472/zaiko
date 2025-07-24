@@ -28,7 +28,7 @@ export default function ItemsManagement() {
       const itemsData = await getItems();
       setItems(itemsData);
     } catch (error) {
-      console.error('アイテム一覧の取得に失敗しました:', error);
+      console.error('アイテムの一覧の取得に失敗しました:', error);
     } finally {
       setLoading(false);
     }
@@ -62,7 +62,7 @@ export default function ItemsManagement() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('このアイテム種別を削除しますか？関連するアイテムも削除されます。')) return;
+    if (!confirm('このアイテムの種類を削除しますか？')) return;
 
     try {
       await deleteItem(id);
@@ -85,7 +85,7 @@ export default function ItemsManagement() {
               <a href="/admin/dashboard" className="text-blue-600 hover:text-blue-800 mr-4">
                 ← ダッシュボードに戻る
               </a>
-              <h1 className="text-xl font-semibold">アイテム種別管理</h1>
+              <h1 className="text-xl font-semibold">アイテムの種類管理</h1>
             </div>
           </div>
         </div>
@@ -98,7 +98,7 @@ export default function ItemsManagement() {
               onClick={() => setShowAddForm(!showAddForm)}
               className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
             >
-              {showAddForm ? 'キャンセル' : '新しいアイテム種別を追加'}
+              {showAddForm ? 'キャンセル' : '新しいアイテムの種類を追加'}
             </button>
           </div>
 
@@ -107,14 +107,14 @@ export default function ItemsManagement() {
               <form onSubmit={handleAdd}>
                 <div className="mb-4">
                   <label className="block text-gray-700 text-sm font-bold mb-2">
-                    アイテム種別名
+                    アイテムの種類名
                   </label>
                   <input
                     type="text"
                     value={newItemLabel}
                     onChange={(e) => setNewItemLabel(e.target.value)}
                     className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                    placeholder="例: プロジェクター"
+                    placeholder="ここにアイテムの種類名を入力"
                     required
                   />
                 </div>
@@ -141,7 +141,7 @@ export default function ItemsManagement() {
             <ul className="divide-y divide-gray-200">
               {items.length === 0 ? (
                 <li className="px-6 py-4 text-center text-gray-500">
-                  アイテム種別が登録されていません
+                  アイテムの種類が登録されていません
                 </li>
               ) : (
                 items.map((item) => (

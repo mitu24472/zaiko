@@ -1,0 +1,5 @@
+version: 2
+build:
+  env: node
+  buildCommand: npm ci && npm run build
+  publishPath: .next

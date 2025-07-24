@@ -33,7 +33,7 @@
 
 ## 技術スタック
 
-- **フロントエンド**: Next.js 12 + React + TypeScript + Tailwind CSS
+- **フロントエンド**: Next.js 13.5.6 + React + TypeScript + Tailwind CSS
 - **バックエンド**: Firebase Firestore
 - **認証**: 独自認証システム（SHA256 + 固定salt）
 - **デプロイ**: Render対応
@@ -152,8 +152,14 @@ http://localhost:3000 でアクセス可能
 ### Renderへのデプロイ
 1. GitHub リポジトリを Render に接続
 2. 環境変数を設定
-3. ビルドコマンド: `npm run build`
-4. 開始コマンド: `npm run start`
+3. Node.js バージョン: 18.17.0 (`.nvmrc`で指定)
+4. ビルドコマンド: `npm ci && npm run build`
+5. 開始コマンド: `npm run start`
+
+### デプロイ時の注意事項
+- Node.js 18.17.0を使用
+- Next.js 13.5.6は安定版でデプロイエラーを回避
+- `moduleResolution: "node"`でTypeScriptエラーを解決
 
 ## セキュリティ
 
