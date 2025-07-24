@@ -6,6 +6,28 @@ import { getClasses, addClass, updateClass, deleteClass } from '@/lib/firestore'
 import { Class } from '@/lib/types';
 
 export default function ClassesManagement() {
+  useEffect(() => {
+    // メタタグを動的に設定
+    const metaRobots = document.createElement('meta');
+    metaRobots.name = 'robots';
+    metaRobots.content = 'noindex, nofollow';
+    document.head.appendChild(metaRobots);
+
+    const metaGooglebot = document.createElement('meta');
+    metaGooglebot.name = 'googlebot';
+    metaGooglebot.content = 'noindex, nofollow';
+    document.head.appendChild(metaGooglebot);
+
+    // クリーンアップ
+    return () => {
+      if (document.head.contains(metaRobots)) {
+        document.head.removeChild(metaRobots);
+      }
+      if (document.head.contains(metaGooglebot)) {
+        document.head.removeChild(metaGooglebot);
+      }
+    };
+  }, []);
   const [classes, setClasses] = useState<Class[]>([]);
   const [filteredClasses, setFilteredClasses] = useState<Class[]>([]);
   const [loading, setLoading] = useState(true);
@@ -161,7 +183,7 @@ export default function ClassesManagement() {
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                  placeholder="例: 1年A組"
+                  placeholder="クラス名を入力"
                 />
               </div>
               <div>

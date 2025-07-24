@@ -10,6 +10,28 @@ type SortField = 'id' | 'itemType' | 'status' | 'borrowedBy' | 'borrowedAt';
 type SortDirection = 'asc' | 'desc';
 
 export default function InstancesManagement() {
+  useEffect(() => {
+    // メタタグを動的に設定
+    const metaRobots = document.createElement('meta');
+    metaRobots.name = 'robots';
+    metaRobots.content = 'noindex, nofollow';
+    document.head.appendChild(metaRobots);
+
+    const metaGooglebot = document.createElement('meta');
+    metaGooglebot.name = 'googlebot';
+    metaGooglebot.content = 'noindex, nofollow';
+    document.head.appendChild(metaGooglebot);
+
+    // クリーンアップ
+    return () => {
+      if (document.head.contains(metaRobots)) {
+        document.head.removeChild(metaRobots);
+      }
+      if (document.head.contains(metaGooglebot)) {
+        document.head.removeChild(metaGooglebot);
+      }
+    };
+  }, []);
   const [instances, setInstances] = useState<Instance[]>([]);
   const [filteredInstances, setFilteredInstances] = useState<Instance[]>([]);
   const [items, setItems] = useState<Item[]>([]);
@@ -185,7 +207,7 @@ export default function InstancesManagement() {
       setShowAddForm(false);
       await fetchData();
     } catch (error) {
-      console.error('アイテムの追加に失敗しました:', error);
+      console.error('物品の追加に失敗しました:', error);
     }
   };
 
@@ -214,13 +236,13 @@ export default function InstancesManagement() {
       await fetchData();
       
       if (errors.length === 0) {
-        alert(`${bulkCount}個のアイテムを追加しました`);
+        alert(`${bulkCount}個の物品を追加しました`);
       } else {
-        alert(`${bulkCount - errors.length}個のアイテムを追加しました。\n失敗: ${errors.length}個\n\n失敗したアイテム:\n${errors.join('\n')}`);
+        alert(`${bulkCount - errors.length}個の物品を追加しました。\n失敗: ${errors.length}個\n\n失敗した物品:\n${errors.join('\n')}`);
       }
     } catch (error) {
       console.error('一括追加に失敗しました:', error);
-      alert('一括追加に失敗しました。一部のアイテムが重複している可能性があります。');
+      alert('一括追加に失敗しました。一部の物品が重複している可能性があります。');
     }
   };
 
@@ -250,13 +272,13 @@ export default function InstancesManagement() {
   };
 
   const handleDelete = async (instanceId: string) => {
-    if (!confirm('このアイテムを削除しますか？')) return;
+    if (!confirm('この物品を削除しますか？')) return;
 
     try {
       await deleteInstance(instanceId);
       await fetchData();
     } catch (error) {
-      console.error('アイテムの削除に失敗しました:', error);
+      console.error('物品の削除に失敗しました:', error);
     }
   };
 
@@ -292,7 +314,7 @@ export default function InstancesManagement() {
               onClick={() => setShowAddForm(!showAddForm)}
               className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
             >
-              {showAddForm ? 'キャンセル' : '新しいアイテムを追加'}
+              {showAddForm ? 'キャンセル' : '新しい物品を追加'}
             </button>
             <button
               onClick={() => setShowBulkAddForm(!showBulkAddForm)}
@@ -317,19 +339,19 @@ export default function InstancesManagement() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <div>
                 <label className="block text-gray-700 text-sm font-bold mb-2">
-                  識別番号・アイテム名で検索
+                  識別番号・物品名で検索
                 </label>
                 <input
                   type="text"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                  placeholder="アイテム名や識別番号を入力"
+                  placeholder="物品名や識別番号を入力"
                 />
               </div>
               <div>
                 <label className="block text-gray-700 text-sm font-bold mb-2">
-                  アイテム名
+                  物品名
                 </label>
                 <select
                   value={filterItemType}
@@ -376,7 +398,7 @@ export default function InstancesManagement() {
 
           {showAddForm && (
             <div className="bg-white p-6 rounded-lg shadow mb-6">
-              <h3 className="text-lg font-medium mb-4">新しいアイテムを追加</h3>
+              <h3 className="text-lg font-medium mb-4">新しい物品を追加</h3>
               <form onSubmit={handleAddInstance}>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                   <div>
@@ -394,7 +416,7 @@ export default function InstancesManagement() {
                   </div>
                   <div>
                     <label className="block text-gray-700 text-sm font-bold mb-2">
-                      アイテム名
+                      物品名
                     </label>
                     <select
                       value={selectedItemId}
@@ -455,8 +477,16 @@ export default function InstancesManagement() {
                     </label>
                     <input
                       type="number"
-                      value={bulkCount}
-                      onChange={(e) => setBulkCount(Math.max(1, parseInt(e.target.value) || 1))}
+                      value={bulkCount === 0 ? '' : bulkCount}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        if (v === '') {
+                          setBulkCount(0);
+                        } else {
+                          const num = parseInt(v) || 1;
+                          setBulkCount(Math.min(Math.max(1, num), 50));
+                        }
+                      }}
                       className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                       min="1"
                       max="50"
@@ -468,7 +498,7 @@ export default function InstancesManagement() {
                   </div>
                   <div>
                     <label className="block text-gray-700 text-sm font-bold mb-2">
-                      アイテム種別
+                      物品種別
                     </label>
                     <select
                       value={bulkSelectedItemId}
@@ -526,7 +556,7 @@ export default function InstancesManagement() {
                       className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                       onClick={() => handleSort('itemType')}
                     >
-                      アイテム種別 {getSortIcon('itemType')}
+                      物品種別 {getSortIcon('itemType')}
                     </th>
                     <th 
                       className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
@@ -555,7 +585,7 @@ export default function InstancesManagement() {
                   {filteredInstances.length === 0 ? (
                     <tr>
                       <td colSpan={6} className="px-6 py-4 text-center text-gray-500">
-                        {instances.length === 0 ? 'アイテムが登録されていません' : '条件に一致するアイテムがありません'}
+                        {instances.length === 0 ? '物品が登録されていません' : '条件に一致する物品がありません'}
                       </td>
                     </tr>
                   ) : (
@@ -625,7 +655,7 @@ export default function InstancesManagement() {
             <h3 className="text-lg font-bold mb-4">貸出処理</h3>
             <p className="mb-4">
               <strong>識別番号:</strong> {selectedInstance.id}<br />
-              <strong>アイテム:</strong> {getItemName(selectedInstance.itemId)}
+              <strong>物品:</strong> {getItemName(selectedInstance.itemId)}
             </p>
             <div className="mb-4">
               <label className="block text-gray-700 text-sm font-bold mb-2">

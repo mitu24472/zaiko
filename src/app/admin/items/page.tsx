@@ -6,6 +6,28 @@ import { getItems, addItem, updateItem, deleteItem } from '@/lib/firestore';
 import { Item } from '@/lib/types';
 
 export default function ItemsManagement() {
+  useEffect(() => {
+    // メタタグを動的に設定
+    const metaRobots = document.createElement('meta');
+    metaRobots.name = 'robots';
+    metaRobots.content = 'noindex, nofollow';
+    document.head.appendChild(metaRobots);
+
+    const metaGooglebot = document.createElement('meta');
+    metaGooglebot.name = 'googlebot';
+    metaGooglebot.content = 'noindex, nofollow';
+    document.head.appendChild(metaGooglebot);
+
+    // クリーンアップ
+    return () => {
+      if (document.head.contains(metaRobots)) {
+        document.head.removeChild(metaRobots);
+      }
+      if (document.head.contains(metaGooglebot)) {
+        document.head.removeChild(metaGooglebot);
+      }
+    };
+  }, []);
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingItem, setEditingItem] = useState<Item | null>(null);

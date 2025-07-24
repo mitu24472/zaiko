@@ -38,10 +38,10 @@ export default function Home() {
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-center text-gray-800 mb-4">
-            小石川創作展 物品貸出管理システム
+            創作展 貸出物品管理システム
           </h1>
           <p className="text-center text-gray-600 mb-6">
-            各アイテムの利用可能数をリアルタイムで確認できます
+            各物品の利用可能数をリアルタイムで確認できます
           </p>
           <div className="text-center mb-6">
             <a 
@@ -76,7 +76,7 @@ export default function Home() {
               <ul className="divide-y divide-gray-200">
                 {items.length === 0 ? (
                   <li className="px-6 py-4 text-center text-gray-500">
-                    アイテムが登録されていません
+                    物品が登録されていません
                   </li>
                 ) : (
                   items.map((item, index) => (

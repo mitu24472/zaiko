@@ -1,0 +1,23 @@
+User-agent: *
+Disallow: /admin/
+Disallow: /api/
+
+# Google specific
+User-agent: Googlebot
+Disallow: /
+
+# Bing specific  
+User-agent: bingbot
+Disallow: /
+
+# Yandex specific
+User-agent: YandexBot
+Disallow: /
+
+# DuckDuckGo specific
+User-agent: DuckDuckBot
+Disallow: /
+
+# Baidu specific
+User-agent: Baiduspider
+Disallow: /

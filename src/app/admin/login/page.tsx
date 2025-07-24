@@ -1,10 +1,28 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { authenticateAdmin } from '@/lib/auth';
 
 export default function AdminLogin() {
+  useEffect(() => {
+    // メタタグを動的に設定
+    const metaRobots = document.createElement('meta');
+    metaRobots.name = 'robots';
+    metaRobots.content = 'noindex, nofollow';
+    document.head.appendChild(metaRobots);
+
+    const metaGooglebot = document.createElement('meta');
+    metaGooglebot.name = 'googlebot';
+    metaGooglebot.content = 'noindex, nofollow';
+    document.head.appendChild(metaGooglebot);
+
+    // クリーンアップ
+    return () => {
+      document.head.removeChild(metaRobots);
+      document.head.removeChild(metaGooglebot);
+    };
+  }, []);
   const [name, setName] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -40,7 +58,7 @@ export default function AdminLogin() {
             管理者ログイン
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            小石川創作展 物品貸出管理システム
+            創作展 物品貸出管理システム
           </p>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>

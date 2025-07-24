@@ -5,6 +5,28 @@ import { useRouter } from 'next/navigation';
 import { Admin } from '@/lib/types';
 
 export default function AdminDashboard() {
+  useEffect(() => {
+    // メタタグを動的に設定
+    const metaRobots = document.createElement('meta');
+    metaRobots.name = 'robots';
+    metaRobots.content = 'noindex, nofollow';
+    document.head.appendChild(metaRobots);
+
+    const metaGooglebot = document.createElement('meta');
+    metaGooglebot.name = 'googlebot';
+    metaGooglebot.content = 'noindex, nofollow';
+    document.head.appendChild(metaGooglebot);
+
+    // クリーンアップ
+    return () => {
+      if (document.head.contains(metaRobots)) {
+        document.head.removeChild(metaRobots);
+      }
+      if (document.head.contains(metaGooglebot)) {
+        document.head.removeChild(metaGooglebot);
+      }
+    };
+  }, []);
   const [admin, setAdmin] = useState<Admin | null>(null);
   const router = useRouter();
 
@@ -93,10 +115,10 @@ export default function AdminDashboard() {
                   <div className="ml-5 w-0 flex-1">
                     <dl>
                       <dt className="text-sm font-medium text-gray-500 truncate">
-                        アイテム種別管理
+                        物品種別管理
                       </dt>
                       <dd className="text-lg font-medium text-gray-900">
-                        アイテム種別の追加・編集・削除
+                        物品種別の追加・編集・削除
                       </dd>
                     </dl>
                   </div>
@@ -106,7 +128,7 @@ export default function AdminDashboard() {
                     href="/admin/items"
                     className="w-full bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded text-center block"
                   >
-                    アイテム管理へ
+                    物品管理へ
                   </a>
                 </div>
               </div>
