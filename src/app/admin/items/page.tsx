@@ -95,19 +95,26 @@ export default function ItemsManagement() {
   };
 
   if (loading) {
-    return <div className="flex justify-center items-center h-screen">読み込み中...</div>;
+    return (
+      <div className="flex justify-center items-center h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <div className="text-xl text-white">読み込み中...</div>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white shadow">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+      <nav className="bg-gray-800 shadow-lg border-b border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
-              <a href="/admin/dashboard" className="text-blue-600 hover:text-blue-800 mr-4">
+              <a href="/admin/dashboard" className="text-blue-400 hover:text-blue-300 mr-4 transition-colors duration-200">
                 ← ダッシュボードに戻る
               </a>
-              <h1 className="text-xl font-semibold">アイテムの種類管理</h1>
+              <h1 className="text-xl font-semibold text-white">アイテムの種類管理</h1>
             </div>
           </div>
         </div>
@@ -118,24 +125,24 @@ export default function ItemsManagement() {
           <div className="mb-6">
             <button
               onClick={() => setShowAddForm(!showAddForm)}
-              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
             >
               {showAddForm ? 'キャンセル' : '新しいアイテムの種類を追加'}
             </button>
           </div>
 
           {showAddForm && (
-            <div className="bg-white p-6 rounded-lg shadow mb-6">
+            <div className="bg-gray-800 p-6 rounded-lg shadow-xl mb-6 border border-gray-700">
               <form onSubmit={handleAdd}>
                 <div className="mb-4">
-                  <label className="block text-gray-700 text-sm font-bold mb-2">
+                  <label className="block text-gray-200 text-sm font-bold mb-2">
                     アイテムの種類名
                   </label>
                   <input
                     type="text"
                     value={newItemLabel}
                     onChange={(e) => setNewItemLabel(e.target.value)}
-                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    className="bg-gray-700 border border-gray-600 rounded w-full py-3 px-4 text-white leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                     placeholder="ここにアイテムの種類名を入力"
                     required
                   />
@@ -143,14 +150,14 @@ export default function ItemsManagement() {
                 <div className="flex space-x-2">
                   <button
                     type="submit"
-                    className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+                    className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
                   >
                     追加
                   </button>
                   <button
                     type="button"
                     onClick={() => setShowAddForm(false)}
-                    className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
+                    className="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
                   >
                     キャンセル
                   </button>
@@ -159,53 +166,54 @@ export default function ItemsManagement() {
             </div>
           )}
 
-          <div className="bg-white shadow overflow-hidden sm:rounded-md">
-            <ul className="divide-y divide-gray-200">
+          <div className="bg-gray-800 shadow-xl overflow-hidden rounded-xl border border-gray-700">
+            <ul className="divide-y divide-gray-700">
               {items.length === 0 ? (
-                <li className="px-6 py-4 text-center text-gray-500">
-                  アイテムの種類が登録されていません
+                <li className="px-6 py-8 text-center text-gray-400">
+                  <div className="text-4xl mb-4">📦</div>
+                  <p className="text-lg">アイテムの種類が登録されていません</p>
                 </li>
               ) : (
                 items.map((item) => (
-                  <li key={item.id} className="px-6 py-4">
+                  <li key={item.id} className="px-6 py-4 hover:bg-gray-700 transition-colors duration-200">
                     {editingItem?.id === item.id ? (
                       <form onSubmit={handleEdit} className="flex items-center space-x-2">
                         <input
                           type="text"
                           value={editingItem.label}
                           onChange={(e) => setEditingItem({ ...editingItem, label: e.target.value })}
-                          className="flex-1 shadow appearance-none border rounded py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                          className="flex-1 bg-gray-700 border border-gray-600 rounded py-3 px-4 text-white leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                           required
                         />
                         <button
                           type="submit"
-                          className="bg-green-500 hover:bg-green-700 text-white font-bold py-1 px-3 rounded"
+                          className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
                         >
                           保存
                         </button>
                         <button
                           type="button"
                           onClick={() => setEditingItem(null)}
-                          className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-1 px-3 rounded"
+                          className="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
                         >
                           キャンセル
                         </button>
                       </form>
                     ) : (
                       <div className="flex items-center justify-between">
-                        <div className="text-sm font-medium text-gray-900">
+                        <div className="text-lg font-medium text-white">
                           {item.label}
                         </div>
                         <div className="flex space-x-2">
                           <button
                             onClick={() => setEditingItem(item)}
-                            className="bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-1 px-3 rounded text-sm"
+                            className="bg-yellow-600 hover:bg-yellow-700 text-white font-semibold py-2 px-4 rounded-lg text-sm transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
                           >
                             編集
                           </button>
                           <button
                             onClick={() => handleDelete(item.id)}
-                            className="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-3 rounded text-sm"
+                            className="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg text-sm transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
                           >
                             削除
                           </button>

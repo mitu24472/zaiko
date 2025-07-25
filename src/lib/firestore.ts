@@ -19,11 +19,18 @@ import { Admin, Class, Item, Instance } from './types';
 
 // Classes
 export const getClasses = async (): Promise<Class[]> => {
-  const querySnapshot = await getDocs(collection(db, 'classes'));
-  return querySnapshot.docs.map(doc => ({
-    id: doc.id,
-    ...doc.data()
-  } as Class));
+  try {
+    console.log('getClasses開始');
+    const querySnapshot = await getDocs(collection(db, 'classes'));
+    console.log('getClasses完了:', querySnapshot.docs.length);
+    return querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    } as Class));
+  } catch (error) {
+    console.error('getClasses エラー:', error);
+    throw error;
+  }
 };
 
 export const addClass = async (name: string): Promise<string> => {
@@ -41,47 +48,56 @@ export const deleteClass = async (id: string): Promise<void> => {
 
 // Items
 export const getItems = async (): Promise<Item[]> => {
-  const querySnapshot = await getDocs(collection(db, 'items'));
-  const items = querySnapshot.docs.map(doc => ({
-    id: doc.id,
-    ...doc.data()
-  } as Item));
-  
-  // カウンタフィールドが存在しないアイテムを自動的に更新
-  const itemsToUpdate: Item[] = [];
-  
-  for (const item of items) {
-    if (item.totalCount === undefined || item.borrowedCount === undefined || item.availableCount === undefined) {
-      itemsToUpdate.push(item);
-    }
-  }
-  
-  // カウンタが不足しているアイテムがある場合、インスタンスを取得して計算
-  if (itemsToUpdate.length > 0) {
-    const instances = await getInstances();
+  try {
+    console.log('getItems開始');
+    const querySnapshot = await getDocs(collection(db, 'items'));
+    console.log('getItems取得:', querySnapshot.docs.length);
+    const items = querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    } as Item));
     
-    // 各アイテムのカウンタを計算・更新
-    for (const item of itemsToUpdate) {
-      const itemInstances = instances.filter(instance => instance.itemId === item.id);
-      const totalCount = itemInstances.length;
-      const borrowedCount = itemInstances.filter(instance => !instance.isAvailable).length;
-      const availableCount = totalCount - borrowedCount;
-      
-      // Firestoreのアイテムドキュメントを更新
-      await updateDoc(doc(db, 'items', item.id), {
-        totalCount,
-        borrowedCount,
-        availableCount
-      });
-      
-      // メモリ上のアイテムオブジェクトも更新
-      item.totalCount = totalCount;
-      item.borrowedCount = borrowedCount;
-      item.availableCount = availableCount;
+    // カウンタフィールドが存在しないアイテムを自動的に更新
+    const itemsToUpdate: Item[] = [];
+    
+    for (const item of items) {
+      if (item.totalCount === undefined || item.borrowedCount === undefined || item.availableCount === undefined) {
+        itemsToUpdate.push(item);
+      }
     }
+    
+    // カウンタが不足しているアイテムがある場合、インスタンスを取得して計算
+    if (itemsToUpdate.length > 0) {
+      console.log('カウンタ更新が必要なアイテム:', itemsToUpdate.length);
+      const instances = await getInstances();
+      
+      // 各アイテムのカウンタを計算・更新
+      for (const item of itemsToUpdate) {
+        const itemInstances = instances.filter(instance => instance.itemId === item.id);
+        const totalCount = itemInstances.length;
+        const borrowedCount = itemInstances.filter(instance => !instance.isAvailable).length;
+        const availableCount = totalCount - borrowedCount;
+        
+        // Firestoreのアイテムドキュメントを更新
+        await updateDoc(doc(db, 'items', item.id), {
+          totalCount,
+          borrowedCount,
+          availableCount
+        });
+        
+        // メモリ上のアイテムオブジェクトも更新
+        item.totalCount = totalCount;
+        item.borrowedCount = borrowedCount;
+        item.availableCount = availableCount;
+      }
+    }
+    
+    console.log('getItems完了');
+    return items;
+  } catch (error) {
+    console.error('getItems エラー:', error);
+    throw error;
   }
-  
-  return items;
 };
 
 export const addItem = async (label: string): Promise<string> => {
@@ -124,196 +140,241 @@ export const getFilteredInstances = async (filters: {
   isAvailable?: boolean;
   borrowedBy?: string;
 }): Promise<Instance[]> => {
-  const constraints = [];
-  
-  if (filters.itemId) {
-    constraints.push(where('itemId', '==', filters.itemId));
+  try {
+    console.log('getFilteredInstances開始:', filters);
+    const constraints = [];
+    
+    if (filters.itemId) {
+      constraints.push(where('itemId', '==', filters.itemId));
+    }
+    
+    if (filters.isAvailable !== undefined) {
+      constraints.push(where('isAvailable', '==', filters.isAvailable));
+    }
+    
+    if (filters.borrowedBy) {
+      constraints.push(where('borrowedBy', '==', filters.borrowedBy));
+    }
+    
+    let querySnapshot;
+    if (constraints.length > 0) {
+      const q = query(collection(db, 'instances'), ...constraints);
+      querySnapshot = await getDocs(q);
+    } else {
+      querySnapshot = await getDocs(collection(db, 'instances'));
+    }
+    
+    console.log('getFilteredInstances取得:', querySnapshot.docs.length);
+    
+    return querySnapshot.docs.map(doc => {
+      const data = doc.data() as any;
+      return {
+        firestoreId: doc.id,
+        id: data.id,
+        itemId: data.itemId,
+        isAvailable: data.isAvailable,
+        borrowedBy: data.borrowedBy,
+        borrowedAt: data.borrowedAt
+      } as Instance;
+    });
+  } catch (error) {
+    console.error('getFilteredInstances エラー:', error);
+    throw error;
   }
-  
-  if (filters.isAvailable !== undefined) {
-    constraints.push(where('isAvailable', '==', filters.isAvailable));
-  }
-  
-  if (filters.borrowedBy) {
-    constraints.push(where('borrowedBy', '==', filters.borrowedBy));
-  }
-  
-  let querySnapshot;
-  if (constraints.length > 0) {
-    const q = query(collection(db, 'instances'), ...constraints);
-    querySnapshot = await getDocs(q);
-  } else {
-    querySnapshot = await getDocs(collection(db, 'instances'));
-  }
-  
-  return querySnapshot.docs.map(doc => {
-    const data = doc.data() as any;
-    return {
-      firestoreId: doc.id,
-      id: data.id,
-      itemId: data.itemId,
-      isAvailable: data.isAvailable,
-      borrowedBy: data.borrowedBy,
-      borrowedAt: data.borrowedAt
-    } as Instance;
-  });
 };
 
 export const addInstance = async (instanceId: string, itemId: string): Promise<void> => {
-  // 重複チェック
-  const q = query(collection(db, 'instances'), where('id', '==', instanceId));
-  const querySnapshot = await getDocs(q);
-  
-  if (!querySnapshot.empty) {
-    throw new Error(`識別番号 ${instanceId} は既に存在しています`);
-  }
-  
-  // トランザクションで instances 追加と items カウンタ更新を同期実行
-  await runTransaction(db, async (transaction) => {
-    // インスタンス追加
-    const instanceRef = doc(collection(db, 'instances'));
-    transaction.set(instanceRef, {
-      id: instanceId,
-      itemId,
-      isAvailable: true,
-      borrowedBy: null,
-      borrowedAt: null
+  try {
+    console.log('addInstance開始:', { instanceId, itemId });
+    
+    // 重複チェック
+    const q = query(collection(db, 'instances'), where('id', '==', instanceId));
+    const querySnapshot = await getDocs(q);
+    
+    if (!querySnapshot.empty) {
+      throw new Error(`識別番号 ${instanceId} は既に存在しています`);
+    }
+    
+    console.log('重複チェック完了、トランザクション開始');
+    
+    // トランザクションで instances 追加と items カウンタ更新を同期実行
+    await runTransaction(db, async (transaction) => {
+      console.log('トランザクション内部開始');
+      
+      // 最初にすべての読み取り操作を実行
+      const itemRef = doc(db, 'items', itemId);
+      const itemDoc = await transaction.get(itemRef);
+      
+      if (!itemDoc.exists()) {
+        throw new Error(`アイテム ${itemId} が存在しません`);
+      }
+      
+      const itemData = itemDoc.data();
+      
+      // 次に書き込み操作を実行
+      // インスタンス追加
+      const instanceRef = doc(collection(db, 'instances'));
+      transaction.set(instanceRef, {
+        id: instanceId,
+        itemId,
+        isAvailable: true,
+        borrowedBy: null,
+        borrowedAt: null
+      });
+      
+      console.log('インスタンス追加完了、アイテムカウンタ更新開始');
+      
+      // アイテムカウンタ更新
+      if (itemData && (itemData.totalCount === undefined || itemData.borrowedCount === undefined || itemData.availableCount === undefined)) {
+        console.log('カウンタ初期化（1, 0, 1に設定）');
+        transaction.update(itemRef, {
+          totalCount: 1,
+          borrowedCount: 0,
+          availableCount: 1
+        });
+      } else {
+        console.log('カウンタ更新');
+        // 既存のカウンタを更新
+        transaction.update(itemRef, {
+          totalCount: increment(1),
+          availableCount: increment(1)
+        });
+      }
+      
+      console.log('トランザクション内部完了');
     });
     
-    // アイテムカウンタ更新（カウンタが存在しない場合は初期化）
-    const itemRef = doc(db, 'items', itemId);
-    const itemDoc = await transaction.get(itemRef);
-    const itemData = itemDoc.data();
-    
-    if (itemData && (itemData.totalCount === undefined || itemData.borrowedCount === undefined || itemData.availableCount === undefined)) {
-      // カウンタが存在しない場合、現在のインスタンス数を計算して初期化
-      const instances = await getInstances();
-      const itemInstances = instances.filter(instance => instance.itemId === itemId);
-      const totalCount = itemInstances.length + 1; // 新規追加分を含む
-      const borrowedCount = itemInstances.filter(instance => !instance.isAvailable).length;
-      const availableCount = totalCount - borrowedCount;
-      
-      transaction.update(itemRef, {
-        totalCount,
-        borrowedCount,
-        availableCount
-      });
-    } else {
-      // 既存のカウンタを更新
-      transaction.update(itemRef, {
-        totalCount: increment(1),
-        availableCount: increment(1)
-      });
-    }
-  });
+    console.log('addInstance完了');
+  } catch (error) {
+    console.error('addInstance エラー:', error);
+    throw error;
+  }
 };
 
 export const borrowInstance = async (instanceId: string, classId: string): Promise<void> => {
-  // カスタムIDからFirestoreドキュメントIDを検索
-  const q = query(collection(db, 'instances'), where('id', '==', instanceId));
-  const querySnapshot = await getDocs(q);
-  
-  if (querySnapshot.empty) {
-    throw new Error(`アイテム ${instanceId} が見つかりません`);
-  }
-  
-  const instanceDoc = querySnapshot.docs[0];
-  const instanceData = instanceDoc.data();
-  
-  if (!instanceData.isAvailable) {
-    throw new Error(`アイテム ${instanceId} は既に貸出中です`);
-  }
-  
-  // トランザクションでインスタンス更新とアイテムカウンタ更新を同期実行
-  await runTransaction(db, async (transaction) => {
-    // インスタンス更新
-    const instanceRef = instanceDoc.ref;
-    transaction.update(instanceRef, {
-      isAvailable: false,
-      borrowedBy: classId,
-      borrowedAt: Timestamp.now()
+  try {
+    console.log('borrowInstance開始:', { instanceId, classId });
+    
+    // カスタムIDからFirestoreドキュメントIDを検索
+    const q = query(collection(db, 'instances'), where('id', '==', instanceId));
+    const querySnapshot = await getDocs(q);
+    
+    if (querySnapshot.empty) {
+      throw new Error(`アイテム ${instanceId} が見つかりません`);
+    }
+    
+    const instanceDoc = querySnapshot.docs[0];
+    const instanceData = instanceDoc.data();
+    
+    if (!instanceData.isAvailable) {
+      throw new Error(`アイテム ${instanceId} は既に貸出中です`);
+    }
+    
+    console.log('インスタンス確認完了、トランザクション開始');
+    
+    // トランザクションでインスタンス更新とアイテムカウンタ更新を同期実行
+    await runTransaction(db, async (transaction) => {
+      // 最初にすべての読み取り操作を実行
+      const itemRef = doc(db, 'items', instanceData.itemId);
+      const itemDoc = await transaction.get(itemRef);
+      const itemData = itemDoc.data();
+      
+      // 次に書き込み操作を実行
+      // インスタンス更新
+      const instanceRef = instanceDoc.ref;
+      transaction.update(instanceRef, {
+        isAvailable: false,
+        borrowedBy: classId,
+        borrowedAt: Timestamp.now()
+      });
+      
+      // アイテムカウンタ更新
+      if (itemData && (itemData.totalCount === undefined || itemData.borrowedCount === undefined || itemData.availableCount === undefined)) {
+        console.log('カウンタ初期化（貸出）');
+        // 最初の貸出の場合、1,1,0に設定
+        transaction.update(itemRef, {
+          totalCount: 1,
+          borrowedCount: 1,
+          availableCount: 0
+        });
+      } else {
+        console.log('カウンタ更新（貸出）');
+        // 既存のカウンタを更新
+        transaction.update(itemRef, {
+          borrowedCount: increment(1),
+          availableCount: increment(-1)
+        });
+      }
     });
     
-    // アイテムカウンタ更新
-    const itemRef = doc(db, 'items', instanceData.itemId);
-    const itemDoc = await transaction.get(itemRef);
-    const itemData = itemDoc.data();
-    
-    if (itemData && (itemData.totalCount === undefined || itemData.borrowedCount === undefined || itemData.availableCount === undefined)) {
-      // カウンタが存在しない場合、現在のインスタンス数を計算して初期化
-      const instances = await getInstances();
-      const itemInstances = instances.filter(instance => instance.itemId === instanceData.itemId);
-      const totalCount = itemInstances.length;
-      const borrowedCount = itemInstances.filter(instance => !instance.isAvailable).length + 1; // 現在の貸出分を含む
-      const availableCount = totalCount - borrowedCount;
-      
-      transaction.update(itemRef, {
-        totalCount,
-        borrowedCount,
-        availableCount
-      });
-    } else {
-      // 既存のカウンタを更新
-      transaction.update(itemRef, {
-        borrowedCount: increment(1),
-        availableCount: increment(-1)
-      });
-    }
-  });
+    console.log('borrowInstance完了');
+  } catch (error) {
+    console.error('borrowInstance エラー:', error);
+    throw error;
+  }
 };
 
 export const returnInstance = async (instanceId: string): Promise<void> => {
-  // カスタムIDからFirestoreドキュメントIDを検索
-  const q = query(collection(db, 'instances'), where('id', '==', instanceId));
-  const querySnapshot = await getDocs(q);
-  
-  if (querySnapshot.empty) {
-    throw new Error(`アイテム ${instanceId} が見つかりません`);
-  }
-  
-  const instanceDoc = querySnapshot.docs[0];
-  const instanceData = instanceDoc.data();
-  
-  if (instanceData.isAvailable) {
-    throw new Error(`アイテム ${instanceId} は既に返却済みです`);
-  }
-  
-  // トランザクションでインスタンス更新とアイテムカウンタ更新を同期実行
-  await runTransaction(db, async (transaction) => {
-    // インスタンス更新
-    const instanceRef = instanceDoc.ref;
-    transaction.update(instanceRef, {
-      isAvailable: true,
-      borrowedBy: null,
-      borrowedAt: null
+  try {
+    console.log('returnInstance開始:', { instanceId });
+    
+    // カスタムIDからFirestoreドキュメントIDを検索
+    const q = query(collection(db, 'instances'), where('id', '==', instanceId));
+    const querySnapshot = await getDocs(q);
+    
+    if (querySnapshot.empty) {
+      throw new Error(`アイテム ${instanceId} が見つかりません`);
+    }
+    
+    const instanceDoc = querySnapshot.docs[0];
+    const instanceData = instanceDoc.data();
+    
+    if (instanceData.isAvailable) {
+      throw new Error(`アイテム ${instanceId} は既に返却済みです`);
+    }
+    
+    console.log('インスタンス確認完了、トランザクション開始');
+    
+    // トランザクションでインスタンス更新とアイテムカウンタ更新を同期実行
+    await runTransaction(db, async (transaction) => {
+      // 最初にすべての読み取り操作を実行
+      const itemRef = doc(db, 'items', instanceData.itemId);
+      const itemDoc = await transaction.get(itemRef);
+      const itemData = itemDoc.data();
+      
+      // 次に書き込み操作を実行
+      // インスタンス更新
+      const instanceRef = instanceDoc.ref;
+      transaction.update(instanceRef, {
+        isAvailable: true,
+        borrowedBy: null,
+        borrowedAt: null
+      });
+      
+      // アイテムカウンタ更新
+      if (itemData && (itemData.totalCount === undefined || itemData.borrowedCount === undefined || itemData.availableCount === undefined)) {
+        console.log('カウンタ初期化（返却）');
+        // 返却の場合、1,0,1に設定
+        transaction.update(itemRef, {
+          totalCount: 1,
+          borrowedCount: 0,
+          availableCount: 1
+        });
+      } else {
+        console.log('カウンタ更新（返却）');
+        // 既存のカウンタを更新
+        transaction.update(itemRef, {
+          borrowedCount: increment(-1),
+          availableCount: increment(1)
+        });
+      }
     });
     
-    // アイテムカウンタ更新
-    const itemRef = doc(db, 'items', instanceData.itemId);
-    const itemDoc = await transaction.get(itemRef);
-    const itemData = itemDoc.data();
-    
-    if (itemData && (itemData.totalCount === undefined || itemData.borrowedCount === undefined || itemData.availableCount === undefined)) {
-      // カウンタが存在しない場合、現在のインスタンス数を計算して初期化
-      const instances = await getInstances();
-      const itemInstances = instances.filter(instance => instance.itemId === instanceData.itemId);
-      const totalCount = itemInstances.length;
-      const borrowedCount = itemInstances.filter(instance => !instance.isAvailable).length - 1; // 現在の返却分を除く
-      const availableCount = totalCount - borrowedCount;
-      
-      transaction.update(itemRef, {
-        totalCount,
-        borrowedCount,
-        availableCount
-      });
-    } else {
-      // 既存のカウンタを更新
-      transaction.update(itemRef, {
-        borrowedCount: increment(-1),
-        availableCount: increment(1)
-      });
-    }
-  });
+    console.log('returnInstance完了');
+  } catch (error) {
+    console.error('returnInstance エラー:', error);
+    throw error;
+  }
 };
 
 export const deleteInstance = async (instanceId: string): Promise<void> => {

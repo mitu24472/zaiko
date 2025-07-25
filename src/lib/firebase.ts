@@ -1,6 +1,6 @@
 // lib/firebase.ts
 import { initializeApp } from 'firebase/app';
-import { getFirestore } from 'firebase/firestore';
+import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
 
 // Firebase設定
 const firebaseConfig = {
@@ -18,3 +18,12 @@ const app = initializeApp(firebaseConfig);
 
 // Firestore データベースを初期化してエクスポート
 export const db = getFirestore(app);
+
+// 開発環境での接続確認
+if (typeof window !== 'undefined') {
+  console.log('Firebase設定:', {
+    projectId: firebaseConfig.projectId,
+    authDomain: firebaseConfig.authDomain,
+    hasApiKey: !!firebaseConfig.apiKey
+  });
+}
