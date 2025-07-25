@@ -6,6 +6,8 @@ import { getItemAvailability } from '@/lib/firestore';
 interface ItemAvailability {
   itemName: string;
   availableCount: number;
+  totalCount: number;
+  borrowedCount: number;
 }
 
 export default function Home() {
@@ -85,12 +87,17 @@ export default function Home() {
                         <div className="text-sm font-medium text-gray-900">
                           {item.itemName}
                         </div>
-                        <div className={`text-sm font-bold px-3 py-1 rounded-full ${
-                          item.availableCount > 0 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-red-100 text-red-800'
-                        }`}>
-                          利用可能: {item.availableCount}個
+                        <div className="flex items-center space-x-3">
+                          <div className="text-xs text-gray-500">
+                            総数: {item.totalCount}個 | 貸出中: {item.borrowedCount}個
+                          </div>
+                          <div className={`text-sm font-bold px-3 py-1 rounded-full ${
+                            item.availableCount > 0 
+                              ? 'bg-green-100 text-green-800' 
+                              : 'bg-red-100 text-red-800'
+                          }`}>
+                            利用可能: {item.availableCount}個
+                          </div>
                         </div>
                       </div>
                     </li>

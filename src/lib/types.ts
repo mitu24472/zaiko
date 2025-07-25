@@ -15,6 +15,9 @@ export interface Class {
 export interface Item {
   id: string;
   label: string;
+  totalCount?: number;    // 総在庫数（オプショナル、後方互換性のため）
+  borrowedCount?: number; // 貸出中数（オプショナル、後方互換性のため）
+  availableCount?: number; // 利用可能数（オプショナル、後方互換性のため）
 }
 
 export interface Instance {

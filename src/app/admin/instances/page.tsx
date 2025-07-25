@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { getInstances, getItems, getClasses, addInstance, borrowInstance, returnInstance, deleteInstance } from '@/lib/firestore';
+import { getFilteredInstances, getItems, getClasses, addInstance, borrowInstance, returnInstance, deleteInstance } from '@/lib/firestore';
 import { Instance, Item, Class } from '@/lib/types';
 import { Timestamp } from 'firebase/firestore';
 
@@ -36,7 +36,7 @@ export default function InstancesManagement() {
   const [filteredInstances, setFilteredInstances] = useState<Instance[]>([]);
   const [items, setItems] = useState<Item[]>([]);
   const [classes, setClasses] = useState<Class[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // 初期状態は false
   const [showAddForm, setShowAddForm] = useState(false);
   const [newInstanceId, setNewInstanceId] = useState('');
   const [selectedItemId, setSelectedItemId] = useState('');
@@ -52,11 +52,9 @@ export default function InstancesManagement() {
   
   // フィルタとソート機能用の状態
   const [filterItemType, setFilterItemType] = useState('');
-  const [filterStatus, setFilterStatus] = useState('');
   const [filterClass, setFilterClass] = useState('');
   const [sortField, setSortField] = useState<SortField>('id');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
-  const [searchTerm, setSearchTerm] = useState('');
   
   const router = useRouter();
 
@@ -77,48 +75,45 @@ export default function InstancesManagement() {
       return;
     }
 
-    fetchData();
+    fetchInitialData();
   }, [router]);
 
-  // フィルタとソート機能
+  // フィルタ選択時にインスタンスを取得
+  useEffect(() => {
+    if (filterItemType || filterClass) {
+      fetchFilteredInstances();
+    } else {
+      setInstances([]);
+      setFilteredInstances([]);
+    }
+  }, [filterItemType, filterClass]);
+
+  // ソート機能
   useEffect(() => {
     let filtered = [...instances];
 
-    // 検索フィルタ
-    if (searchTerm) {
-      filtered = filtered.filter(instance => 
-        instance.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        getItemName(instance.itemId).toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    // アイテム種別フィルタ
-    if (filterItemType) {
-      filtered = filtered.filter(instance => instance.itemId === filterItemType);
-    }
-
-    // ステータスフィルタ
-    if (filterStatus === 'available') {
-      filtered = filtered.filter(instance => instance.isAvailable);
-    } else if (filterStatus === 'borrowed') {
-      filtered = filtered.filter(instance => !instance.isAvailable);
-    }
-
-    // クラスフィルタ
-    if (filterClass) {
-      filtered = filtered.filter(instance => instance.borrowedBy === filterClass);
-    }
-
     // ソート
     filtered.sort((a, b) => {
+      // 識別番号(id)を prefix と数値部に分割して比較
+      if (sortField === 'id') {
+        const parseId = (id: string): [string, number] => {
+          const m = id.match(/^(.*?)(\d+)$/);
+          return m ? [m[1], parseInt(m[2], 10)] : [id, 0];
+        };
+        const [prefixA, numA] = parseId(a.id);
+        const [prefixB, numB] = parseId(b.id);
+        if (prefixA !== prefixB) {
+          return sortDirection === 'asc'
+            ? prefixA.localeCompare(prefixB)
+            : prefixB.localeCompare(prefixA);
+        }
+        return sortDirection === 'asc' ? numA - numB : numB - numA;
+      }
       let aValue: string | number | Date;
       let bValue: string | number | Date;
 
       switch (sortField) {
-        case 'id':
-          aValue = a.id;
-          bValue = b.id;
-          break;
+        // case 'id' は上部で処理済み
         case 'itemType':
           aValue = getItemName(a.itemId);
           bValue = getItemName(b.itemId);
@@ -152,7 +147,7 @@ export default function InstancesManagement() {
     });
 
     setFilteredInstances(filtered);
-  }, [instances, searchTerm, filterItemType, filterStatus, filterClass, sortField, sortDirection, items, classes, getItemName, getClassName]);
+  }, [instances, sortField, sortDirection, items, classes, getItemName, getClassName]);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -169,28 +164,39 @@ export default function InstancesManagement() {
   };
 
   const clearFilters = () => {
-    setSearchTerm('');
     setFilterItemType('');
-    setFilterStatus('');
     setFilterClass('');
     setSortField('id');
     setSortDirection('asc');
   };
 
-  const fetchData = async () => {
+  const fetchInitialData = async () => {
     try {
-      const [instancesData, itemsData, classesData] = await Promise.all([
-        getInstances(),
+      const [itemsData, classesData] = await Promise.all([
         getItems(),
         getClasses()
       ]);
-      setInstances(instancesData);
       // アイテムを降順でソート
-      setItems(itemsData.sort((a, b) => b.label.localeCompare(a.label)));
+      setItems(itemsData.sort((a: Item, b: Item) => b.label.localeCompare(a.label)));
       // クラスを降順でソート
-      setClasses(classesData.sort((a, b) => b.name.localeCompare(a.name)));
+      setClasses(classesData.sort((a: Class, b: Class) => b.name.localeCompare(a.name)));
     } catch (error) {
       console.error('データの取得に失敗しました:', error);
+    }
+  };
+
+  const fetchFilteredInstances = async () => {
+    try {
+      setLoading(true);
+      const filters: any = {};
+      
+      if (filterItemType) filters.itemId = filterItemType;
+      if (filterClass) filters.borrowedBy = filterClass;
+      
+      const instancesData = await getFilteredInstances(filters);
+      setInstances(instancesData);
+    } catch (error) {
+      console.error('インスタンスの取得に失敗しました:', error);
     } finally {
       setLoading(false);
     }
@@ -205,7 +211,7 @@ export default function InstancesManagement() {
       setNewInstanceId('');
       setSelectedItemId('');
       setShowAddForm(false);
-      await fetchData();
+      await fetchFilteredInstances();
     } catch (error) {
       console.error('物品の追加に失敗しました:', error);
     }
@@ -233,7 +239,7 @@ export default function InstancesManagement() {
       setBulkCount(1);
       setBulkSelectedItemId('');
       setShowBulkAddForm(false);
-      await fetchData();
+      await fetchFilteredInstances();
       
       if (errors.length === 0) {
         alert(`${bulkCount}個の物品を追加しました`);
@@ -254,7 +260,7 @@ export default function InstancesManagement() {
       setShowBorrowModal(false);
       setSelectedInstance(null);
       setSelectedClassId('');
-      await fetchData();
+      await fetchFilteredInstances();
     } catch (error) {
       console.error('貸出処理に失敗しました:', error);
     }
@@ -265,7 +271,7 @@ export default function InstancesManagement() {
 
     try {
       await returnInstance(instanceId);
-      await fetchData();
+      await fetchFilteredInstances();
     } catch (error) {
       console.error('返却処理に失敗しました:', error);
     }
@@ -276,7 +282,7 @@ export default function InstancesManagement() {
 
     try {
       await deleteInstance(instanceId);
-      await fetchData();
+      await fetchFilteredInstances();
     } catch (error) {
       console.error('物品の削除に失敗しました:', error);
     }
@@ -329,26 +335,14 @@ export default function InstancesManagement() {
               フィルタをクリア
             </button>
             <div className="text-sm text-gray-600 flex items-center">
-              表示中: {filteredInstances.length}件 / 全{instances.length}件
+              {filteredInstances.length > 0 ? `表示中: ${filteredInstances.length}件` : 'フィルタを選択してください'}
             </div>
           </div>
 
           {/* フィルタとソート */}
           <div className="bg-white p-4 rounded-lg shadow mb-6">
-            <h3 className="text-lg font-medium mb-4">検索・フィルタ</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div>
-                <label className="block text-gray-700 text-sm font-bold mb-2">
-                  識別番号・物品名で検索
-                </label>
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                  placeholder="物品名や識別番号を入力"
-                />
-              </div>
+            <h3 className="text-lg font-medium mb-4">フィルタ</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-gray-700 text-sm font-bold mb-2">
                   物品名
@@ -362,20 +356,6 @@ export default function InstancesManagement() {
                   {items.map(item => (
                     <option key={item.id} value={item.id}>{item.label}</option>
                   ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-gray-700 text-sm font-bold mb-2">
-                  ステータス
-                </label>
-                <select
-                  value={filterStatus}
-                  onChange={(e) => setFilterStatus(e.target.value)}
-                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                >
-                  <option value="">すべて</option>
-                  <option value="available">利用可能</option>
-                  <option value="borrowed">貸出中</option>
                 </select>
               </div>
               <div>
@@ -585,7 +565,9 @@ export default function InstancesManagement() {
                   {filteredInstances.length === 0 ? (
                     <tr>
                       <td colSpan={6} className="px-6 py-4 text-center text-gray-500">
-                        {instances.length === 0 ? '物品が登録されていません' : '条件に一致する物品がありません'}
+                        {filterItemType || filterClass
+                          ? '条件に一致する物品がありません' 
+                          : 'フィルタを選択して物品を表示してください'}
                       </td>
                     </tr>
                   ) : (
