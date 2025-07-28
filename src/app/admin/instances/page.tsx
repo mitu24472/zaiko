@@ -354,7 +354,8 @@ export default function InstancesManagement() {
         console.log('返却処理開始:', { instanceId });
         await returnInstance(instanceId);
         console.log('返却処理成功');
-        await fetchFilteredInstances();
+        // 続けて貸出中のみを表示
+        await showAllBorrowedItems();
         showAlert('成功', '返却処理が完了しました');
       } catch (error) {
         console.error('返却処理に失敗しました:', error);
