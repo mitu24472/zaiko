@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { getClasses, addClass, updateClass, deleteClass } from '@/lib/firestore';
 import { Class } from '@/lib/types';
@@ -46,7 +46,7 @@ export default function ClassesManagement() {
     }
 
     fetchClasses();
-  }, [router]);
+  }, []); // routerの依存を削除
 
   // フィルタとソート機能
   useEffect(() => {
@@ -82,7 +82,7 @@ export default function ClassesManagement() {
     setSortDirection('asc');
   };
 
-  const fetchClasses = async () => {
+  const fetchClasses = useCallback(async () => {
     try {
       const classesData = await getClasses();
       setClasses(classesData);
@@ -91,7 +91,7 @@ export default function ClassesManagement() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();

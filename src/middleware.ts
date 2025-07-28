@@ -21,6 +21,18 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // 学生用ページのアクセス制御
+  if (request.nextUrl.pathname.startsWith('/for_students')) {
+    // ログインページは常にアクセス可能
+    if (request.nextUrl.pathname === '/for_students/login') {
+      return NextResponse.next();
+    }
+    
+    // その他の学生用ページは認証が必要
+    // Note: セッション確認はクライアントサイドで行う
+    return NextResponse.next();
+  }
+
   // その他のパスもそのまま通す
   return NextResponse.next();
 }

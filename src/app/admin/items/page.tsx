@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { getItems, addItem, updateItem, deleteItem } from '@/lib/firestore';
 import { Item } from '@/lib/types';
@@ -43,9 +43,9 @@ export default function ItemsManagement() {
     }
 
     fetchItems();
-  }, [router]);
+  }, []); // routerの依存を削除
 
-  const fetchItems = async () => {
+  const fetchItems = useCallback(async () => {
     try {
       const itemsData = await getItems();
       setItems(itemsData);
@@ -54,7 +54,7 @@ export default function ItemsManagement() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();

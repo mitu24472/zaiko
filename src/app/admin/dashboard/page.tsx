@@ -37,7 +37,7 @@ export default function AdminDashboard() {
     } else {
       router.push('/admin/login');
     }
-  }, [router]);
+  }, []); // routerの依存を削除
 
   const handleLogout = () => {
     sessionStorage.removeItem('admin');

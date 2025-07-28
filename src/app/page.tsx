@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { getItemAvailability } from '@/lib/firestore';
 
 interface ItemAvailability {
@@ -15,11 +15,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [refreshTime, setRefreshTime] = useState<string>('');
 
-  useEffect(() => {
-    fetchItems();
-  }, []);
-
-  const fetchItems = async () => {
+  const fetchItems = useCallback(async () => {
     try {
       setLoading(true);
       const itemsData = await getItemAvailability();
@@ -33,7 +29,11 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchItems();
+  }, [fetchItems]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
@@ -142,7 +142,8 @@ export default function Home() {
 
         <div className="mt-8 text-center text-sm text-gray-400 bg-gray-800 rounded-lg p-6 border border-gray-700">
           <p className="mb-2">※ 貸出・返却により在庫数は変動します</p>
-          <p>最新の情報を確認するには「在庫を更新」ボタンをクリックしてください</p>
+          <p className="mb-4">最新の情報を確認するには「在庫を更新」ボタンをクリックしてください</p>
+          <p>© 2025 創作展委員会/IT委員会</p>
         </div>
       </div>
     </div>

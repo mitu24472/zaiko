@@ -120,7 +120,7 @@ export default function InstancesManagement() {
     }
 
     fetchInitialData();
-  }, [router]);
+  }, []); // routerの依存を削除
 
   // フィルタ選択時にインスタンスを取得
   useEffect(() => {
@@ -214,7 +214,31 @@ export default function InstancesManagement() {
     setSortDirection('asc');
   };
 
-  const fetchInitialData = async () => {
+  const showAllBorrowedItems = async () => {
+    try {
+      console.log('貸出中物品すべて取得開始');
+      setLoading(true);
+      
+      // 貸出中の物品のみを取得 (isAvailable: false)
+      const borrowedInstances = await getFilteredInstances({
+        isAvailable: false
+      });
+      
+      console.log('貸出中物品すべて取得完了:', borrowedInstances.length);
+      setInstances(borrowedInstances);
+      
+      // フィルタをクリア
+      setFilterItemType('');
+      setFilterClass('');
+    } catch (error) {
+      console.error('貸出中物品の取得に失敗しました:', error);
+      showAlert('エラー', `貸出中物品の取得に失敗しました: ${error}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchInitialData = useCallback(async () => {
     try {
       console.log('初期データ取得開始');
       const [itemsData, classesData] = await Promise.all([
@@ -230,9 +254,9 @@ export default function InstancesManagement() {
       console.error('データの取得に失敗しました:', error);
       showAlert('エラー', `データの取得に失敗しました: ${error}`);
     }
-  };
+  }, []);
 
-  const fetchFilteredInstances = async () => {
+  const fetchFilteredInstances = useCallback(async () => {
     try {
       console.log('フィルタ済みインスタンス取得開始:', { filterItemType, filterClass });
       setLoading(true);
@@ -250,7 +274,7 @@ export default function InstancesManagement() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filterItemType, filterClass]);
 
   const handleAddInstance = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -397,8 +421,23 @@ export default function InstancesManagement() {
             >
               フィルタをクリア
             </button>
+            <button
+              onClick={showAllBorrowedItems}
+              className="bg-yellow-600 hover:bg-yellow-700 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+            >
+              貸出中すべて表示
+            </button>
             <div className="text-sm text-gray-400 flex items-center bg-gray-800 px-4 py-3 rounded-lg border border-gray-700">
-              {filteredInstances.length > 0 ? `表示中: ${filteredInstances.length}件` : 'フィルタを選択してください'}
+              {filteredInstances.length > 0 ? (
+                <span>
+                  表示中: {filteredInstances.length}件
+                  {!filterItemType && !filterClass && filteredInstances.some(instance => !instance.isAvailable) && 
+                    <span className="ml-2 text-yellow-400">（貸出中物品を表示中）</span>
+                  }
+                </span>
+              ) : (
+                'フィルタを選択してください'
+              )}
             </div>
           </div>
 
